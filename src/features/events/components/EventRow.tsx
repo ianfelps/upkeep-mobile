@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components';
 import { colors, radii, spacing } from '@/theme';
 import { formatTime } from '@/utils/date';
+import { resolveEventColor } from '../constants';
 import type { EventOccurrence } from '../types';
 
 type Props = {
@@ -11,8 +12,7 @@ type Props = {
 };
 
 export function EventRow({ occurrence, onPress }: Props) {
-  const isRecurring = occurrence.eventType === 'recurring';
-  const dotColor = isRecurring ? colors.primary : colors.accent;
+  const dotColor = resolveEventColor(occurrence.source.color);
   const pending = occurrence.source.syncStatus !== 'synced';
 
   return (

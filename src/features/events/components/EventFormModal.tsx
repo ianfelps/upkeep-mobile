@@ -5,9 +5,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Feather } from '@expo/vector-icons';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import {
   Banner,
@@ -19,11 +20,12 @@ import {
   TextField,
   TimePickerField,
 } from '@/components';
-import { colors, spacing } from '@/theme';
+import { colors, radii, spacing } from '@/theme';
 import type { LocalEvent } from '@/db/repositories/routineEvents';
 import { getErrorMessage } from '@/api/errors';
 import { todayKey } from '../selectors';
 import { eventFormSchema, type EventFormValues } from '../schemas';
+import { EVENT_COLORS, DEFAULT_EVENT_COLOR } from '../constants';
 import { DayOfWeekChips } from './DayOfWeekChips';
 import {
   useCreateEvent,
@@ -46,7 +48,7 @@ function toDefaults(event: LocalEvent | null): EventFormValues {
       mode: 'once',
       eventDate: todayKey(),
       daysOfWeek: [],
-      isActive: true,
+      color: DEFAULT_EVENT_COLOR,
     };
   }
   return {
@@ -57,7 +59,7 @@ function toDefaults(event: LocalEvent | null): EventFormValues {
     mode: event.eventType,
     eventDate: event.eventDate ?? '',
     daysOfWeek: event.daysOfWeekParsed ?? [],
-    isActive: event.isActive,
+    color: event.color ?? DEFAULT_EVENT_COLOR,
   };
 }
 
@@ -82,6 +84,7 @@ export const EventFormModal = forwardRef<EventFormModalHandle>((_props, ref) => 
   });
 
   const mode = watch('mode');
+  const selectedColor = watch('color');
 
   useImperativeHandle(ref, () => ({
     open: (event) => {
@@ -104,6 +107,7 @@ export const EventFormModal = forwardRef<EventFormModalHandle>((_props, ref) => 
     const daysOfWeek =
       values.mode === 'recurring' ? values.daysOfWeek ?? [] : null;
     const eventDate = values.mode === 'once' ? values.eventDate ?? null : null;
+    const color = values.color ?? null;
 
     try {
       if (editing) {
@@ -116,7 +120,7 @@ export const EventFormModal = forwardRef<EventFormModalHandle>((_props, ref) => 
             endTime,
             daysOfWeek,
             eventDate,
-            isActive: values.isActive,
+            color,
           },
         });
       } else {
@@ -127,7 +131,7 @@ export const EventFormModal = forwardRef<EventFormModalHandle>((_props, ref) => 
           endTime,
           daysOfWeek,
           eventDate,
-          isActive: values.isActive,
+          color,
         });
       }
       close();
@@ -305,26 +309,31 @@ export const EventFormModal = forwardRef<EventFormModalHandle>((_props, ref) => 
           </View>
         )}
 
-        <Controller
-          name="isActive"
-          control={control}
-          render={({ field: { value, onChange } }) => (
-            <View style={styles.switchRow}>
-              <View style={{ flex: 1 }}>
-                <Text variant="bodyMedium">Ativo</Text>
-                <Text variant="small" color={colors.textMuted}>
-                  Eventos inativos não aparecem na lista.
-                </Text>
-              </View>
-              <Switch
-                value={value}
-                onValueChange={onChange}
-                trackColor={{ true: colors.primary, false: colors.border }}
-                thumbColor={colors.surface}
-              />
-            </View>
-          )}
-        />
+        <View style={styles.block}>
+          <Text variant="smallMedium">Cor</Text>
+          <View style={styles.colorRow}>
+            {EVENT_COLORS.map((c) => {
+              const active = selectedColor === c;
+              return (
+                <Pressable
+                  key={c}
+                  onPress={() => setValue('color', c)}
+                  style={[
+                    styles.colorSwatch,
+                    { backgroundColor: c },
+                    active && styles.colorSwatchActive,
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
+                >
+                  {active && (
+                    <Feather name="check" size={14} color="#fff" />
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         {editing && (
           <Button
@@ -370,11 +379,21 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   block: { gap: spacing.xs },
-  switchRow: {
+  colorRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  colorSwatch: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.pill,
     alignItems: 'center',
-    gap: spacing.base,
-    paddingVertical: spacing.xs,
+    justifyContent: 'center',
+  },
+  colorSwatchActive: {
+    borderWidth: 3,
+    borderColor: colors.text,
   },
   footer: {
     flexDirection: 'row',

@@ -12,3 +12,5 @@ export { Sheet } from './Sheet';
 export { DatePickerField } from './DatePickerField';
 export { TimePickerField } from './TimePickerField';
 export { ToastHost, toast } from './Toast';
+export { AppLogo } from './AppLogo';
+export { ConfirmSheet, type ConfirmSheetHandle } from './ConfirmSheet';

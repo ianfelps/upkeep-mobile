@@ -1,6 +1,6 @@
 import type { LocalEvent } from '@/db/repositories/routineEvents';
 
-export type EventFilter = 'day' | 'threeDays' | 'week' | 'month';
+export type EventFilter = 'day' | 'week' | 'month';
 
 export type EventOccurrence = {
   /** Composite key: `${localId}:${dateKey}` — stable for FlatList. */
@@ -13,7 +13,6 @@ export type EventOccurrence = {
   title: string;
   description: string | null;
   eventType: 'once' | 'recurring';
-  isActive: boolean;
   source: LocalEvent;
 };
 

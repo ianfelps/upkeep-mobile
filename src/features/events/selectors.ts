@@ -9,11 +9,6 @@ export function resolveRange(filter: EventFilter, anchorKey: string): DateRange 
   switch (filter) {
     case 'day':
       return { fromKey: anchor.format('YYYY-MM-DD'), toKey: anchor.format('YYYY-MM-DD') };
-    case 'threeDays':
-      return {
-        fromKey: anchor.subtract(1, 'day').format('YYYY-MM-DD'),
-        toKey: anchor.add(1, 'day').format('YYYY-MM-DD'),
-      };
     case 'week': {
       const dow = anchor.day();
       const deltaToMon = dow === 0 ? -6 : 1 - dow;
@@ -34,11 +29,6 @@ export function formatRangeLabel(filter: EventFilter, anchorKey: string): string
   switch (filter) {
     case 'day':
       return anchor.format('dddd · DD [de] MMM');
-    case 'threeDays': {
-      const a = anchor.subtract(1, 'day');
-      const b = anchor.add(1, 'day');
-      return `${a.format('DD MMM')} – ${b.format('DD MMM')}`;
-    }
     case 'week': {
       const { fromKey, toKey } = resolveRange('week', anchorKey);
       return `${parseDateKey(fromKey).format('DD MMM')} – ${parseDateKey(toKey).format('DD MMM')}`;
@@ -53,8 +43,6 @@ export function shiftAnchor(filter: EventFilter, anchorKey: string, direction: 1
   switch (filter) {
     case 'day':
       return anchor.add(direction, 'day').format('YYYY-MM-DD');
-    case 'threeDays':
-      return anchor.add(direction * 3, 'day').format('YYYY-MM-DD');
     case 'week':
       return anchor.add(direction, 'week').format('YYYY-MM-DD');
     case 'month':
@@ -77,7 +65,6 @@ function buildOccurrence(event: LocalEvent, dateKey: string): EventOccurrence {
     title: event.title,
     description: event.description,
     eventType: event.eventType,
-    isActive: event.isActive,
     source: event,
   };
 }
@@ -91,8 +78,6 @@ export function expandRecurrence(
   const out: EventOccurrence[] = [];
 
   for (const event of events) {
-    if (!event.isActive) continue;
-
     if (event.eventType === 'once') {
       if (!event.eventDate) continue;
       if (event.eventDate >= fromKey && event.eventDate <= toKey) {

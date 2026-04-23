@@ -1,11 +1,13 @@
 import React, { forwardRef, useState } from 'react';
 import {
+  Pressable,
   StyleSheet,
   TextInput,
   View,
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '@/theme';
 import { Text } from './Text';
 
@@ -16,12 +18,21 @@ type Props = TextInputProps & {
   leadingIcon?: React.ReactNode;
   trailingIcon?: React.ReactNode;
   containerStyle?: ViewStyle;
+  showPasswordToggle?: boolean;
 };
 
 export const TextField = forwardRef<TextInput, Props>(
-  ({ label, helper, error, leadingIcon, trailingIcon, containerStyle, onFocus, onBlur, style, ...rest }, ref) => {
+  ({ label, helper, error, leadingIcon, trailingIcon, containerStyle, onFocus, onBlur, style, showPasswordToggle, secureTextEntry, ...rest }, ref) => {
     const [focused, setFocused] = useState(false);
+    const [visible, setVisible] = useState(false);
     const hasError = !!error;
+
+    const resolvedSecure = secureTextEntry && !visible;
+    const trailing = showPasswordToggle && secureTextEntry ? (
+      <Pressable onPress={() => setVisible(v => !v)} hitSlop={8}>
+        <Feather name={visible ? 'eye-off' : 'eye'} size={18} color={colors.textMuted} />
+      </Pressable>
+    ) : trailingIcon;
 
     return (
       <View style={[styles.wrapper, containerStyle]}>
@@ -42,6 +53,7 @@ export const TextField = forwardRef<TextInput, Props>(
             ref={ref}
             placeholderTextColor={colors.textMuted}
             style={[styles.input, style]}
+            secureTextEntry={resolvedSecure}
             onFocus={(e) => {
               setFocused(true);
               onFocus?.(e);
@@ -52,7 +64,7 @@ export const TextField = forwardRef<TextInput, Props>(
             }}
             {...rest}
           />
-          {trailingIcon && <View style={styles.iconRight}>{trailingIcon}</View>}
+          {trailing && <View style={styles.iconRight}>{trailing}</View>}
         </View>
         {hasError ? (
           <Text variant="small" color={colors.error} style={styles.helper}>

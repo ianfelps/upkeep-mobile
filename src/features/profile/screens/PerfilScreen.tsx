@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Card, Screen, Text } from '@/components';
+import { Card, ConfirmSheet, Screen, Text, type ConfirmSheetHandle } from '@/components';
 import { colors, radii, spacing } from '@/theme';
 import { useAuthStore } from '@/features/auth/store';
 import { useLogout } from '@/features/auth/hooks';
@@ -17,6 +17,7 @@ import {
 } from '../components/ChangePasswordModal';
 import { useDeleteAccount } from '../mutations';
 import { getErrorMessage } from '@/api/errors';
+import { toast } from '@/components';
 
 export default function PerfilScreen() {
   const user = useAuthStore((s) => s.user);
@@ -26,6 +27,9 @@ export default function PerfilScreen() {
 
   const editRef = useRef<EditProfileModalHandle>(null);
   const pwRef = useRef<ChangePasswordModalHandle>(null);
+  const logoutSheetRef = useRef<ConfirmSheetHandle>(null);
+  const deleteSheet1Ref = useRef<ConfirmSheetHandle>(null);
+  const deleteSheet2Ref = useRef<ConfirmSheetHandle>(null);
 
   const initials = (user?.name ?? '?')
     .split(' ')
@@ -38,53 +42,18 @@ export default function PerfilScreen() {
     ? dayjs(user.createdAt).format('MMMM [de] YYYY')
     : null;
 
-  const confirmLogout = () => {
-    Alert.alert('Sair', 'Deseja encerrar sua sessão neste aparelho?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          await logout.mutateAsync();
-          router.replace('/(auth)/login');
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    await logout.mutateAsync();
+    router.replace('/(auth)/login');
   };
 
-  const confirmDeleteAccount = () => {
-    Alert.alert(
-      'Excluir conta',
-      'Isso removerá permanentemente sua conta e todos os seus dados deste aparelho. Continuar?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Tenho certeza',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Confirmar exclusão',
-              'Essa ação é irreversível. Tem certeza absoluta?',
-              [
-                { text: 'Voltar', style: 'cancel' },
-                {
-                  text: 'Excluir definitivamente',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      await deleteAccount.mutateAsync();
-                      router.replace('/(auth)/login');
-                    } catch (err) {
-                      Alert.alert('Erro', getErrorMessage(err));
-                    }
-                  },
-                },
-              ]
-            );
-          },
-        },
-      ]
-    );
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccount.mutateAsync();
+      router.replace('/(auth)/login');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
   };
 
   return (
@@ -127,14 +96,14 @@ export default function PerfilScreen() {
           <ActionRow
             icon="log-out"
             label="Sair"
-            onPress={confirmLogout}
+            onPress={() => logoutSheetRef.current?.open()}
             loading={logout.isPending}
           />
           <ActionRow
             icon="trash-2"
             label="Excluir conta"
             tone="destructive"
-            onPress={confirmDeleteAccount}
+            onPress={() => deleteSheet1Ref.current?.open()}
             loading={deleteAccount.isPending}
           />
         </View>
@@ -146,6 +115,37 @@ export default function PerfilScreen() {
 
       <EditProfileModal ref={editRef} />
       <ChangePasswordModal ref={pwRef} />
+
+      <ConfirmSheet
+        ref={logoutSheetRef}
+        title="Sair"
+        message="Deseja encerrar sua sessão neste aparelho?"
+        confirmLabel="Sair"
+        cancelLabel="Cancelar"
+        onConfirm={handleLogout}
+        loading={logout.isPending}
+      />
+
+      <ConfirmSheet
+        ref={deleteSheet1Ref}
+        title="Excluir conta"
+        message="Isso removerá permanentemente sua conta e todos os seus dados. Continuar?"
+        confirmLabel="Tenho certeza"
+        cancelLabel="Cancelar"
+        tone="destructive"
+        onConfirm={() => deleteSheet2Ref.current?.open()}
+      />
+
+      <ConfirmSheet
+        ref={deleteSheet2Ref}
+        title="Confirmar exclusão"
+        message="Essa ação é irreversível. Tem certeza absoluta?"
+        confirmLabel="Excluir definitivamente"
+        cancelLabel="Voltar"
+        tone="destructive"
+        onConfirm={handleDeleteAccount}
+        loading={deleteAccount.isPending}
+      />
     </Screen>
   );
 }

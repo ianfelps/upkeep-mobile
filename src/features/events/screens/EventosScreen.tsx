@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, RefreshControl, SectionList, StyleSheet, View } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { FAB, Screen, Text } from '@/components';
 import { colors, spacing } from '@/theme';
 import { syncEngine } from '@/sync/syncEngine';
@@ -7,41 +8,67 @@ import { FilterBar } from '../components/FilterBar';
 import { EventRow } from '../components/EventRow';
 import { EmptyEvents } from '../components/EmptyEvents';
 import { EventFormModal, type EventFormModalHandle } from '../components/EventFormModal';
-import { OfflineBanner } from '../components/OfflineBanner';
-import { SyncErrorBanner } from '../components/SyncErrorBanner';
-import { useEventsInRange } from '../queries';
-import { resolveRange, todayKey } from '../selectors';
+import { ConnectionStatusIcon } from '../components/ConnectionStatusIcon';
+import { MonthCalendarView } from '../components/MonthCalendarView';
+import { TimelineView } from '../components/TimelineView';
+import { useEventsForDay, useEventsInRange } from '../queries';
+import { eventsQueryKeys } from '../queryKeys';
+import { resolveRange, shiftAnchor, todayKey } from '../selectors';
 import type { EventFilter, EventOccurrence } from '../types';
 
 export default function EventosScreen() {
   const [filter, setFilter] = useState<EventFilter>('day');
   const [anchorKey, setAnchorKey] = useState<string>(todayKey());
   const [refreshing, setRefreshing] = useState(false);
+  const [syncDone, setSyncDone] = useState(() => syncEngine.hasSynced());
   const formRef = useRef<EventFormModalHandle>(null);
 
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    return syncEngine.onResult(() => {
+      setSyncDone(true);
+      queryClient.invalidateQueries({ queryKey: eventsQueryKeys.all });
+    });
+  }, [queryClient]);
+
+  const isDay = filter === 'day';
   const range = useMemo(() => resolveRange(filter, anchorKey), [filter, anchorKey]);
-  const query = useEventsInRange(range.fromKey, range.toKey);
+
+  const dayQuery = useEventsForDay(anchorKey, { enabled: isDay });
+  const rangeQuery = useEventsInRange(range.fromKey, range.toKey, { enabled: !isDay });
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
       await syncEngine.tick('pullToRefresh');
-      await query.refetch();
+      if (isDay) await dayQuery.refetch();
+      else await rangeQuery.refetch();
     } finally {
       setRefreshing(false);
     }
   };
 
-  const sections = query.data ?? [];
-  const hasData = sections.length > 0;
+  const sections = rangeQuery.data ?? [];
+  const hasData = isDay ? (dayQuery.data?.length ?? 0) > 0 : sections.length > 0;
+  const isLoading = isDay ? dayQuery.isLoading : rangeQuery.isLoading;
+  const isFetching = isDay ? dayQuery.isFetching : rangeQuery.isFetching;
 
   const openCreate = () => formRef.current?.open();
   const openEdit = (occ: EventOccurrence) => formRef.current?.open(occ.source);
 
+  const goToDay = (dateKey: string) => {
+    setAnchorKey(dateKey);
+    setFilter('day');
+  };
+
   return (
     <Screen>
       <View style={styles.header}>
-        <Text variant="display">Eventos</Text>
+        <View style={styles.titleRow}>
+          <Text variant="display">Eventos</Text>
+          <ConnectionStatusIcon />
+        </View>
         <FilterBar
           filter={filter}
           onFilterChange={setFilter}
@@ -50,15 +77,24 @@ export default function EventosScreen() {
         />
       </View>
 
-      <View style={styles.banners}>
-        <OfflineBanner />
-        <SyncErrorBanner />
-      </View>
-
-      {query.isLoading && !hasData ? (
+      {(!syncDone || isLoading || (!hasData && isFetching)) ? (
         <View style={styles.loading}>
           <ActivityIndicator color={colors.primary} />
         </View>
+      ) : isDay ? (
+        <TimelineView
+          occurrences={dayQuery.data ?? []}
+          dateKey={anchorKey}
+          onSwipeLeft={() => setAnchorKey(shiftAnchor('day', anchorKey, 1))}
+          onSwipeRight={() => setAnchorKey(shiftAnchor('day', anchorKey, -1))}
+          onEventPress={openEdit}
+        />
+      ) : filter === 'month' ? (
+        <MonthCalendarView
+          sections={sections}
+          anchorKey={anchorKey}
+          onDayPress={goToDay}
+        />
       ) : (
         <SectionList
           sections={sections}
@@ -76,7 +112,7 @@ export default function EventosScreen() {
             styles.listContent,
             !hasData && styles.listContentEmpty,
           ]}
-          ListEmptyComponent={!query.isLoading ? <EmptyEvents /> : null}
+          ListEmptyComponent={!isLoading ? <EmptyEvents /> : null}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -105,10 +141,10 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     backgroundColor: colors.surface,
   },
-  banners: {
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
-    gap: spacing.sm,
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   loading: {
     flex: 1,

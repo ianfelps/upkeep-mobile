@@ -8,9 +8,11 @@ import type { SyncReason, SyncResult } from './types';
 type Listener = (result: SyncResult) => void;
 
 let tickInFlight: Promise<SyncResult> | null = null;
+let syncedAtLeastOnce = false;
 const listeners = new Set<Listener>();
 
 function emit(result: SyncResult) {
+  syncedAtLeastOnce = true;
   for (const l of listeners) {
     try {
       l(result);
@@ -102,4 +104,5 @@ async function tick(reason: SyncReason): Promise<SyncResult> {
 export const syncEngine = {
   tick,
   onResult: onSyncResult,
+  hasSynced: () => syncedAtLeastOnce,
 };

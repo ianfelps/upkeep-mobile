@@ -13,7 +13,7 @@ export const routineEvents = sqliteTable(
     daysOfWeek: text('days_of_week'),
     eventDate: text('event_date'),
     eventType: text('event_type', { enum: ['once', 'recurring'] }).notNull(),
-    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    color: text('color'),
     userId: text('user_id').notNull(),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),

@@ -3,9 +3,10 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 're
 import { Link, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Banner, Button, Screen, Text, TextField } from '@/components';
+import { AppLogo, Banner, Button, Screen, Text, TextField } from '@/components';
 import { colors, spacing } from '@/theme';
 import { getErrorMessage } from '@/api/errors';
+import { syncEngine } from '@/sync/syncEngine';
 import { useLogin } from '../hooks';
 import { loginSchema, type LoginValues } from '../schemas';
 
@@ -21,6 +22,12 @@ export default function LoginScreen() {
   const onSubmit = handleSubmit(async (values) => {
     try {
       await login.mutateAsync(values);
+      // Aguarda pull inicial para DB ter dados antes de navegar.
+      // Promise.race garante no máximo 5s de espera (ex: offline).
+      await Promise.race([
+        syncEngine.tick('login'),
+        new Promise<void>((resolve) => setTimeout(resolve, 5000)),
+      ]);
       router.replace('/(tabs)/eventos');
     } catch {
       // erro já exposto via login.error
@@ -35,7 +42,7 @@ export default function LoginScreen() {
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <View style={styles.logoDot} />
+            <AppLogo size="md" />
             <Text variant="display">Upkeep</Text>
             <Text variant="body" color={colors.textMuted}>
               Organize sua rotina, um dia de cada vez.
@@ -72,6 +79,7 @@ export default function LoginScreen() {
                   label="Senha"
                   placeholder="••••••••"
                   secureTextEntry
+                  showPasswordToggle
                   autoComplete="password"
                   value={field.value}
                   onChangeText={field.onChange}
@@ -111,13 +119,6 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   header: { gap: spacing.sm, alignItems: 'flex-start' },
-  logoDot: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-    marginBottom: spacing.sm,
-  },
   form: { gap: spacing.md },
   footer: {
     marginTop: 'auto',

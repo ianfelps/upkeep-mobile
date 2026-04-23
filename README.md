@@ -15,17 +15,37 @@ App mobile do Upkeep em React Native + Expo (TypeScript). Consome a API irmã [`
 | Tokens | expo-secure-store (refresh) · access token em memória |
 | Modais | @gorhom/bottom-sheet v5 |
 | Datas | dayjs (utc, timezone, isBetween, weekday), locale pt-br |
-| Ícones / Fonte | Feather (@expo/vector-icons) · Inter |
+| Ícones / Fonte | @expo/vector-icons 15 (Octicons, Feather, Ionicons, MaterialCommunityIcons) · Inter |
 | Pickers | @react-native-community/datetimepicker |
 | Conectividade | @react-native-community/netinfo |
-| Animações | react-native-reanimated v3 |
+| Animações | react-native-reanimated v3 · react-native-gesture-handler v2 |
+
+## Funcionalidades
+
+### Eventos
+- CRUD completo com sync offline-first
+- **Visualização dia**: timeline vertical com blocos de horário (estilo Google Calendar), swipe esquerda/direita para navegar entre dias
+- **Visualização semana**: lista agrupada por dia
+- **Visualização mês**: calendário em grade, segunda a domingo, chips coloridos por dia
+- Cor por evento — paleta de 8 cores configurável no formulário
+- Filtro de conexão: ícone discreto com Sheet modal mostrando estado offline ou fila de erros de sync
+
+### Auth & Perfil
+- Login / cadastro (com confirmação de senha)
+- Editar nome/email, trocar senha, logout, excluir conta (dupla confirmação)
+- Todos os campos de senha com toggle de visibilidade (olhinho)
+- Diálogos de confirmação estilizados via `ConfirmSheet` (sem Alert nativo do Android)
+
+### UX
+- Splash screen com logo + tagline enquanto a sessão é validada
+- Sync aguardado antes de navegar para eventos após login (evita flash de tela vazia)
 
 ## Pré-requisitos
 
 - Node 20+
 - `upkeep-api` rodando (`http://localhost:5003` por padrão)
-- Android Studio com um AVD, **ou** Xcode/iOS simulator
-- No emulador Android, `localhost` é resolvido automaticamente para `10.0.2.2` em `src/utils/env.ts`.
+- Android Studio com AVD, **ou** Xcode/iOS simulator
+- No emulador Android, `localhost` é resolvido automaticamente para `10.0.2.2` via `src/utils/env.ts`
 
 ## Setup
 
@@ -49,17 +69,20 @@ npm start                # ou: npm run android / npm run ios
 
 ```
 app/                   rotas (Expo Router)
+  index.tsx            splash/redirect por status de auth
   (auth)/              login, register
   (tabs)/              eventos, habitos, progresso, perfil
 src/
   api/                 ky client, endpoints, auth interceptor, DTOs (zod)
-  components/          primitivas UI (Button, TextField, Sheet, Toast, ...)
+  components/          primitivas UI (Button, TextField, Sheet, ConfirmSheet,
+                         AppLogo, Toast, Banner, SegmentedControl, ...)
   db/                  schema, migrator, repositories (routineEvents, kv)
   features/
     auth/              login, register, session bootstrap
-    events/            queries, mutations, selectors, form, banners
+    events/            timeline, calendar, queries, selectors, form modal,
+                         color picker, connection status icon
     profile/           edit, change password, logout, delete
-  sync/                syncEngine, pushQueue, pullDelta, triggers
+  sync/                syncEngine (hasSynced), pushQueue, pullDelta, triggers
   theme/               colors, typography, spacing, radii, shadows
   utils/               date, id (ulid), env, secureStore, logger
 drizzle/               migrations SQL geradas
@@ -68,12 +91,13 @@ __tests__/             Jest specs
 
 ## Offline-first — como funciona
 
-- **Leitura**: queries leem o SQLite local (`useEventsInRange` -> `findInRange` + `expandRecurrence`). A UI nunca espera a rede.
+- **Leitura**: queries leem o SQLite local (`useEventsForDay` / `useEventsInRange`). A UI nunca espera a rede.
 - **Escrita otimista**: create/update/delete gravam local com `sync_status = pending_*` e disparam `schedulePostMutationSync()` (debounce 300ms).
 - **Push queue** (`src/sync/pushQueue.ts`) drena pendentes por `updated_at ASC`: POST/PUT/DELETE na API, grava `remote_id` em sucesso, registra `sync_error` em falhas 4xx.
 - **Pull delta** (`src/sync/pullDelta.ts`): `GET /routine-events?updatedSince={lastPulledAt}`, UPSERT por `remote_id` com LWW por `updated_at`.
-- **Triggers** (`src/sync/triggers.ts`): login · AppState foreground · NetInfo offline->online · pós-mutação · pull-to-refresh.
+- **Triggers** (`src/sync/triggers.ts`): login · AppState foreground · NetInfo offline→online · pós-mutação · pull-to-refresh.
 - **Refresh token**: mutex em `src/api/authInterceptor.ts` garante um único refresh por rajada de 401s.
+- **hasSynced()**: `syncEngine.hasSynced()` permite que telas saibam se ao menos um sync foi concluído, evitando flash de estado vazio antes dos dados chegarem.
 
 Gaps conhecidos:
 - Deletes remotos cross-device dependem de full-reconcile 24h (API sem tombstones).

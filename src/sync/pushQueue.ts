@@ -23,7 +23,7 @@ function toPayload(row: events.LocalEvent): CreateRoutineEventPayload {
     endTime: row.endTime,
     daysOfWeek: row.daysOfWeekParsed,
     eventDate: row.eventDate,
-    isActive: row.isActive,
+    color: row.color,
   };
 }
 

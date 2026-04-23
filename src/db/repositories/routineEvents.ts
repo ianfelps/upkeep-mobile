@@ -16,7 +16,7 @@ export type CreateLocalEventInput = {
   endTime?: string | null;
   daysOfWeek?: number[] | null;
   eventDate?: string | null;
-  isActive?: boolean;
+  color?: string | null;
   userId: string;
 };
 
@@ -62,7 +62,7 @@ export async function createLocal(input: CreateLocalEventInput): Promise<LocalEv
     daysOfWeek: daysOfWeek ? JSON.stringify(daysOfWeek) : null,
     eventDate,
     eventType,
-    isActive: input.isActive ?? true,
+    color: input.color ?? null,
     userId: input.userId,
     createdAt: now,
     updatedAt: now,
@@ -99,7 +99,7 @@ export async function updateLocal(
     daysOfWeek: nextDays ? JSON.stringify(nextDays) : null,
     eventDate: nextDate,
     eventType,
-    isActive: patch.isActive ?? existing.isActive,
+    color: patch.color === undefined ? existing.color : patch.color,
     updatedAt: nowIsoUtc(),
     syncStatus: nextStatus,
     syncError: null,
@@ -165,7 +165,6 @@ export async function findInRange(fromKey: string, toKey: string): Promise<Local
     .where(
       and(
         ne(routineEvents.syncStatus, 'pending_delete'),
-        eq(routineEvents.isActive, true),
         or(
           eq(routineEvents.eventType, 'recurring'),
           and(
@@ -243,7 +242,7 @@ export async function upsertFromServer(dto: RoutineEventDto): Promise<void> {
     daysOfWeek: dto.daysOfWeek ? JSON.stringify(dto.daysOfWeek) : null,
     eventDate: dto.eventDate ?? null,
     eventType: dto.eventType,
-    isActive: dto.isActive,
+    color: dto.color ?? null,
     userId: dto.userId,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
@@ -278,6 +277,16 @@ export async function countWithSyncError(): Promise<number> {
     .from(routineEvents)
     .where(sql`${routineEvents.syncError} IS NOT NULL`);
   return rows.length;
+}
+
+export async function findWithSyncError(): Promise<LocalEvent[]> {
+  const db = getDatabase();
+  const rows = await db
+    .select()
+    .from(routineEvents)
+    .where(sql`${routineEvents.syncError} IS NOT NULL`)
+    .orderBy(asc(routineEvents.updatedAt));
+  return rows.map(hydrate);
 }
 
 export async function wipeAll(): Promise<void> {

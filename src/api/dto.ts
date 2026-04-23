@@ -27,7 +27,7 @@ export const routineEventSchema = z.object({
   daysOfWeek: z.array(z.number().int().min(0).max(6)).nullable(),
   eventDate: z.string().nullable(),
   eventType: z.enum(['once', 'recurring']),
-  isActive: z.boolean(),
+  color: z.string().nullable(),
   userId: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -43,7 +43,7 @@ export type CreateRoutineEventPayload = {
   endTime?: string | null;
   daysOfWeek?: number[] | null;
   eventDate?: string | null;
-  isActive?: boolean;
+  color?: string | null;
 };
 
 export type UpdateRoutineEventPayload = CreateRoutineEventPayload;

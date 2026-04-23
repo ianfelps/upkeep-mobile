@@ -27,7 +27,7 @@ export const eventFormSchema = z
       .union([z.string().regex(DATE_REGEX, 'Data inválida'), z.literal(''), z.null()])
       .optional(),
     daysOfWeek: z.array(DayOfWeek).optional(),
-    isActive: z.boolean(),
+    color: z.string().nullable().optional(),
   })
   .superRefine((val, ctx) => {
     if (val.mode === 'once') {

@@ -9,7 +9,6 @@ import { formatRangeLabel, shiftAnchor, todayKey } from '../selectors';
 
 const options: { value: EventFilter; label: string }[] = [
   { value: 'day', label: 'Dia' },
-  { value: 'threeDays', label: '3 Dias' },
   { value: 'week', label: 'Semana' },
   { value: 'month', label: 'Mês' },
 ];
@@ -49,7 +48,7 @@ export function FilterBar({ filter, onFilterChange, anchorKey, onAnchorChange }:
           <Text variant="bodyMedium">{label}</Text>
           {!isToday && (
             <Text variant="caption" color={colors.primary}>
-              Toque para ir a hoje
+              Voltar para hoje
             </Text>
           )}
         </Pressable>

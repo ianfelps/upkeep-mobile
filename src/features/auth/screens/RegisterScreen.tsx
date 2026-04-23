@@ -16,10 +16,10 @@ export default function RegisterScreen() {
 
   const { control, handleSubmit, formState } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: '', email: '', password: '' },
+    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
   });
 
-  const onSubmit = handleSubmit(async (values) => {
+  const onSubmit = handleSubmit(async ({ confirmPassword: _, ...values }) => {
     try {
       await register.mutateAsync(values);
       router.replace('/(tabs)/eventos');
@@ -93,6 +93,24 @@ export default function RegisterScreen() {
                   label="Senha"
                   placeholder="Mínimo 6 caracteres"
                   secureTextEntry
+                  showPasswordToggle
+                  autoComplete="password-new"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={fieldState.error?.message}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field, fieldState }) => (
+                <TextField
+                  label="Confirmar senha"
+                  placeholder="Repita a senha"
+                  secureTextEntry
+                  showPasswordToggle
                   autoComplete="password-new"
                   value={field.value}
                   onChangeText={field.onChange}

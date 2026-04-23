@@ -66,6 +66,7 @@ export const ChangePasswordModal = forwardRef<ChangePasswordModalHandle>((_props
               onChangeText={onChange}
               onBlur={onBlur}
               secureTextEntry
+              showPasswordToggle
               autoCapitalize="none"
               error={fieldState.error?.message}
             />
@@ -83,6 +84,7 @@ export const ChangePasswordModal = forwardRef<ChangePasswordModalHandle>((_props
               onChangeText={onChange}
               onBlur={onBlur}
               secureTextEntry
+              showPasswordToggle
               autoCapitalize="none"
               error={fieldState.error?.message}
             />
@@ -99,6 +101,7 @@ export const ChangePasswordModal = forwardRef<ChangePasswordModalHandle>((_props
               onChangeText={onChange}
               onBlur={onBlur}
               secureTextEntry
+              showPasswordToggle
               autoCapitalize="none"
               error={fieldState.error?.message}
             />
