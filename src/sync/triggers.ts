@@ -3,6 +3,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { syncEngine } from './syncEngine';
 import { useAuthStore } from '@/features/auth/store';
 import { logger } from '@/utils/logger';
+import { rescheduleEventNotifications } from '@/notifications/scheduler';
 
 let unsubscribeAppState: (() => void) | null = null;
 let unsubscribeNetInfo: (() => void) | null = null;
@@ -18,6 +19,7 @@ export function schedulePostMutationSync(delayMs = 300): void {
     void syncEngine.tick('postMutation').catch((err) => {
       logger.warn('[sync] post-mutation tick failed', { message: (err as Error).message });
     });
+    void rescheduleEventNotifications();
   }, delayMs);
 }
 

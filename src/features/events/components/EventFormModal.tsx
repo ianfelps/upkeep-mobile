@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Feather } from '@expo/vector-icons';
@@ -27,15 +27,15 @@ import { todayKey } from '../selectors';
 import { eventFormSchema, type EventFormValues } from '../schemas';
 import { EVENT_COLORS, DEFAULT_EVENT_COLOR } from '../constants';
 import { DayOfWeekChips } from './DayOfWeekChips';
-import {
-  useCreateEvent,
-  useDeleteEvent,
-  useUpdateEvent,
-} from '../mutations';
+import { useCreateEvent, useUpdateEvent } from '../mutations';
 
 export type EventFormModalHandle = {
   open: (event?: LocalEvent) => void;
   close: () => void;
+};
+
+type Props = {
+  onDeleteRequest?: (event: LocalEvent) => void;
 };
 
 function toDefaults(event: LocalEvent | null): EventFormValues {
@@ -63,13 +63,12 @@ function toDefaults(event: LocalEvent | null): EventFormValues {
   };
 }
 
-export const EventFormModal = forwardRef<EventFormModalHandle>((_props, ref) => {
+export const EventFormModal = forwardRef<EventFormModalHandle, Props>(({ onDeleteRequest }, ref) => {
   const sheetRef = useRef<BottomSheetModal>(null);
   const [editing, setEditing] = useState<LocalEvent | null>(null);
 
   const create = useCreateEvent();
   const update = useUpdateEvent();
-  const remove = useDeleteEvent();
 
   const {
     control,
@@ -92,7 +91,6 @@ export const EventFormModal = forwardRef<EventFormModalHandle>((_props, ref) => 
       reset(toDefaults(event ?? null));
       create.reset();
       update.reset();
-      remove.reset();
       sheetRef.current?.present();
     },
     close: () => sheetRef.current?.dismiss(),
@@ -142,34 +140,15 @@ export const EventFormModal = forwardRef<EventFormModalHandle>((_props, ref) => 
 
   const confirmDelete = () => {
     if (!editing) return;
-    Alert.alert(
-      'Excluir evento',
-      `Tem certeza que deseja excluir "${editing.title}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await remove.mutateAsync(editing.localId);
-              close();
-            } catch {
-              // erro via Banner
-            }
-          },
-        },
-      ]
-    );
+    onDeleteRequest?.(editing);
   };
 
   const submissionError =
-    create.isError || update.isError || remove.isError
-      ? getErrorMessage(create.error ?? update.error ?? remove.error)
+    create.isError || update.isError
+      ? getErrorMessage(create.error ?? update.error)
       : null;
 
-  const busy =
-    isSubmitting || create.isPending || update.isPending || remove.isPending;
+  const busy = isSubmitting || create.isPending || update.isPending;
 
   return (
     <Sheet
@@ -340,7 +319,6 @@ export const EventFormModal = forwardRef<EventFormModalHandle>((_props, ref) => 
             label="Excluir evento"
             variant="destructive"
             onPress={confirmDelete}
-            loading={remove.isPending}
             disabled={busy}
           />
         )}

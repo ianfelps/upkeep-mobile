@@ -10,6 +10,7 @@ import { fetchMe } from '@/api/endpoints/users';
 import { tokenStorage } from '@/utils/secureStore';
 import * as events from '@/db/repositories/routineEvents';
 import { kvDelete } from '@/db/repositories/kv';
+import { cancelAllEventNotifications } from '@/notifications/scheduler';
 import { useAuthStore } from './store';
 
 export function useLogin() {
@@ -48,6 +49,7 @@ export function useLogout() {
     onSettled: async () => {
       await tokenStorage.clearRefreshToken();
       await events.wipeAll().catch(() => {});
+      await cancelAllEventNotifications().catch(() => {});
       await kvDelete('sync.lastPulledAt').catch(() => {});
       await kvDelete('sync.lastFullReconcileAt').catch(() => {});
       await kvDelete('auth.userId').catch(() => {});

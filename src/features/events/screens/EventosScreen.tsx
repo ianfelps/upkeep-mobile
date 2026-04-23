@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, RefreshControl, SectionList, StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
-import { FAB, Screen, Text } from '@/components';
+import { ConfirmSheet, FAB, Screen, Text, type ConfirmSheetHandle } from '@/components';
 import { colors, spacing } from '@/theme';
 import { syncEngine } from '@/sync/syncEngine';
 import { FilterBar } from '../components/FilterBar';
@@ -12,9 +12,11 @@ import { ConnectionStatusIcon } from '../components/ConnectionStatusIcon';
 import { MonthCalendarView } from '../components/MonthCalendarView';
 import { TimelineView } from '../components/TimelineView';
 import { useEventsForDay, useEventsInRange } from '../queries';
+import { useDeleteEvent } from '../mutations';
 import { eventsQueryKeys } from '../queryKeys';
 import { resolveRange, shiftAnchor, todayKey } from '../selectors';
 import type { EventFilter, EventOccurrence } from '../types';
+import type { LocalEvent } from '@/db/repositories/routineEvents';
 
 export default function EventosScreen() {
   const [filter, setFilter] = useState<EventFilter>('day');
@@ -22,6 +24,9 @@ export default function EventosScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [syncDone, setSyncDone] = useState(() => syncEngine.hasSynced());
   const formRef = useRef<EventFormModalHandle>(null);
+  const deleteSheetRef = useRef<ConfirmSheetHandle>(null);
+  const [pendingDelete, setPendingDelete] = useState<LocalEvent | null>(null);
+  const remove = useDeleteEvent();
 
   const queryClient = useQueryClient();
 
@@ -56,6 +61,24 @@ export default function EventosScreen() {
 
   const openCreate = () => formRef.current?.open();
   const openEdit = (occ: EventOccurrence) => formRef.current?.open(occ.source);
+
+  const handleDeleteRequest = (event: LocalEvent) => {
+    setPendingDelete(event);
+    formRef.current?.close();
+    setTimeout(() => deleteSheetRef.current?.open(), 350);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!pendingDelete) return;
+    const toDelete = pendingDelete;
+    setPendingDelete(null);
+    formRef.current?.close();
+    try {
+      await remove.mutateAsync(toDelete.localId);
+    } catch {
+      // erro tratado pela mutation via toast
+    }
+  };
 
   const goToDay = (dateKey: string) => {
     setAnchorKey(dateKey);
@@ -126,7 +149,17 @@ export default function EventosScreen() {
 
       <FAB onPress={openCreate} accessibilityLabel="Novo evento" />
 
-      <EventFormModal ref={formRef} />
+      <EventFormModal ref={formRef} onDeleteRequest={handleDeleteRequest} />
+
+      <ConfirmSheet
+        ref={deleteSheetRef}
+        title="Excluir evento"
+        message={`Tem certeza que deseja excluir "${pendingDelete?.title ?? ''}"?`}
+        confirmLabel="Excluir"
+        tone="destructive"
+        loading={remove.isPending}
+        onConfirm={handleDeleteConfirm}
+      />
     </Screen>
   );
 }

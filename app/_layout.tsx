@@ -16,10 +16,22 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { colors, typography, spacing } from '@/theme';
+import * as Notifications from 'expo-notifications';
 import { ToastHost } from '@/components';
 import { useBootstrapSession } from '@/features/auth/hooks';
 import { useDatabaseMigrations } from '@/db/migrator';
 import { registerSyncTriggers } from '@/sync/triggers';
+import { requestNotificationPermissions } from '@/notifications/permissions';
+import { rescheduleEventNotifications } from '@/notifications/scheduler';
+import { syncEngine } from '@/sync/syncEngine';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -117,8 +129,15 @@ export default function RootLayout() {
 function AppBootstrap() {
   useBootstrapSession();
   useEffect(() => {
-    const cleanup = registerSyncTriggers();
-    return cleanup;
+    const cleanupSync = registerSyncTriggers();
+    void requestNotificationPermissions();
+    const cleanupNotif = syncEngine.onResult(() => {
+      void rescheduleEventNotifications();
+    });
+    return () => {
+      cleanupSync();
+      cleanupNotif();
+    };
   }, []);
   return null;
 }
