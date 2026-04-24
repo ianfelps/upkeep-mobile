@@ -1,15 +1,17 @@
 import { Redirect, Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
-import { colors, fontFamily } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { fontFamily } from '@/theme';
 import { useAuthStore } from '@/features/auth/store';
 
 export default function TabsLayout() {
+  const colors = useColors();
   const status = useAuthStore((s) => s.status);
 
   if (status === 'loading') {
     return (
-      <View style={styles.loading}>
+      <View style={[styles.loading, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.primary} />
       </View>
     );
@@ -25,7 +27,14 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: Platform.OS === 'ios' ? 82 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 22 : 8,
+          paddingTop: 6,
+        },
         tabBarLabelStyle: styles.label,
         tabBarItemStyle: styles.item,
       }}
@@ -75,15 +84,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.background,
-  },
-  tabBar: {
-    backgroundColor: colors.surface,
-    borderTopColor: colors.border,
-    borderTopWidth: 1,
-    height: Platform.OS === 'ios' ? 82 : 64,
-    paddingBottom: Platform.OS === 'ios' ? 22 : 8,
-    paddingTop: 6,
   },
   label: {
     fontFamily: fontFamily.medium,

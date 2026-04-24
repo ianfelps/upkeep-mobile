@@ -1,15 +1,14 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components';
-import { colors, radii, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing } from '@/theme';
 import { parseDateKey } from '@/utils/date';
 import { resolveEventColor } from '../constants';
 import { todayKey } from '../selectors';
 import type { EventOccurrence, EventsSection } from '../types';
 
-// Monday-first headers
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-
 const MAX_ONCE_CHIPS = 2;
 const MAX_RECURRING_DOTS = 4;
 
@@ -26,7 +25,6 @@ function buildGrid(anchorKey: string): DayCell[][] {
   const monthEnd = anchor.endOf('month');
   const today = todayKey();
 
-  // Monday-first: dayjs.day() 0=Sun,1=Mon,...6=Sat → offset: Sun=6, Mon=0
   const firstDow = monthStart.day();
   const paddingBefore = firstDow === 0 ? 6 : firstDow - 1;
 
@@ -67,6 +65,8 @@ type Props = {
 };
 
 export function MonthCalendarView({ sections, anchorKey, onDayPress }: Props) {
+  const colors = useColors();
+
   const eventMap = useMemo(() => {
     const map = new Map<string, EventOccurrence[]>();
     for (const section of sections) {
@@ -79,7 +79,7 @@ export function MonthCalendarView({ sections, anchorKey, onDayPress }: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.weekHeader}>
+      <View style={[styles.weekHeader, { borderBottomColor: colors.border }]}>
         {WEEKDAYS.map((wd) => (
           <Text key={wd} variant="caption" color={colors.textMuted} style={styles.weekdayLabel}>
             {wd}
@@ -88,7 +88,7 @@ export function MonthCalendarView({ sections, anchorKey, onDayPress }: Props) {
       </View>
 
       {rows.map((row, rowIdx) => (
-        <View key={rowIdx} style={styles.row}>
+        <View key={rowIdx} style={[styles.row, { borderBottomColor: colors.border }]}>
           {row.map((cell) => {
             const occs = eventMap.get(cell.dateKey) ?? [];
             const onceOccs = occs.filter((o) => o.eventType === 'once');
@@ -103,14 +103,15 @@ export function MonthCalendarView({ sections, anchorKey, onDayPress }: Props) {
                 key={cell.dateKey}
                 style={({ pressed }) => [
                   styles.cell,
-                  !cell.isCurrentMonth && styles.cellOtherMonth,
-                  pressed && styles.cellPressed,
+                  { borderRightColor: colors.border },
+                  !cell.isCurrentMonth && { backgroundColor: colors.background },
+                  pressed && { backgroundColor: colors.surfaceAlt },
                 ]}
                 onPress={() => onDayPress(cell.dateKey)}
                 accessibilityRole="button"
                 accessibilityLabel={`Dia ${cell.day}, ${occs.length} eventos`}
               >
-                <View style={[styles.dayNumWrap, cell.isToday && styles.dayNumToday]}>
+                <View style={[styles.dayNumWrap, cell.isToday && { backgroundColor: colors.primary }]}>
                   <Text
                     variant="smallMedium"
                     color={
@@ -178,7 +179,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   weekdayLabel: {
     flex: 1,
@@ -190,21 +190,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   cell: {
     flex: 1,
     paddingTop: spacing.xs,
     paddingHorizontal: 2,
     borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: colors.border,
     gap: 2,
-  },
-  cellOtherMonth: {
-    backgroundColor: colors.background,
-  },
-  cellPressed: {
-    backgroundColor: colors.surfaceAlt,
   },
   dayNumWrap: {
     alignSelf: 'center',
@@ -213,9 +205,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  dayNumToday: {
-    backgroundColor: colors.primary,
   },
   eventsArea: {
     flex: 1,
@@ -234,7 +223,6 @@ const styles = StyleSheet.create({
   overflow: {
     fontSize: 9,
     paddingHorizontal: 2,
-    color: colors.textMuted,
   },
   dotsRow: {
     flexDirection: 'row',

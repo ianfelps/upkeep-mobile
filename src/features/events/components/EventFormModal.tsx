@@ -20,7 +20,8 @@ import {
   TextField,
   TimePickerField,
 } from '@/components';
-import { colors, radii, spacing } from '@/theme';
+import { radii, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
 import type { LocalEvent } from '@/db/repositories/routineEvents';
 import { getErrorMessage } from '@/api/errors';
 import { todayKey } from '../selectors';
@@ -64,6 +65,7 @@ function toDefaults(event: LocalEvent | null): EventFormValues {
 }
 
 export const EventFormModal = forwardRef<EventFormModalHandle, Props>(({ onDeleteRequest }, ref) => {
+  const colors = useColors();
   const sheetRef = useRef<BottomSheetModal>(null);
   const [editing, setEditing] = useState<LocalEvent | null>(null);
 
@@ -300,7 +302,7 @@ export const EventFormModal = forwardRef<EventFormModalHandle, Props>(({ onDelet
                   style={[
                     styles.colorSwatch,
                     { backgroundColor: c },
-                    active && styles.colorSwatchActive,
+                    active && [styles.colorSwatchActive, { borderColor: colors.text }],
                   ]}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: active }}
@@ -324,7 +326,7 @@ export const EventFormModal = forwardRef<EventFormModalHandle, Props>(({ onDelet
         )}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: colors.border }]}>
         <Button
           label="Cancelar"
           variant="ghost"
@@ -371,13 +373,11 @@ const styles = StyleSheet.create({
   },
   colorSwatchActive: {
     borderWidth: 3,
-    borderColor: colors.text,
   },
   footer: {
     flexDirection: 'row',
     gap: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
 });

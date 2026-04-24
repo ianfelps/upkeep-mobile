@@ -6,7 +6,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
-import { colors, radii, shadows, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { radii, shadows, spacing } from '@/theme';
 import { Text } from './Text';
 
 export type ToastTone = 'success' | 'error' | 'info';
@@ -30,17 +31,24 @@ export const toast = {
   },
 };
 
-const toneMap: Record<ToastTone, { bg: string; fg: string; icon: keyof typeof Feather.glyphMap }> = {
-  success: { bg: colors.success, fg: '#FFFFFF', icon: 'check-circle' },
-  error: { bg: colors.error, fg: '#FFFFFF', icon: 'alert-octagon' },
-  info: { bg: colors.text, fg: '#FFFFFF', icon: 'info' },
+const TONE_ICONS: Record<ToastTone, keyof typeof Feather.glyphMap> = {
+  success: 'check-circle',
+  error: 'alert-octagon',
+  info: 'info',
 };
 
 export function ToastHost() {
+  const colors = useColors();
   const [current, setCurrent] = useState<ToastItem | null>(null);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const toneMap: Record<ToastTone, { bg: string; fg: string }> = {
+    success: { bg: colors.success, fg: '#FFFFFF' },
+    error: { bg: colors.error, fg: '#FFFFFF' },
+    info: { bg: colors.text, fg: colors.textInverse },
+  };
 
   const dismiss = useCallback(() => {
     opacity.value = withTiming(0, { duration: 180 });
@@ -74,7 +82,7 @@ export function ToastHost() {
   return (
     <Animated.View pointerEvents="none" style={[styles.wrapper, style]}>
       <View style={[styles.toast, { backgroundColor: palette.bg }]}>
-        <Feather name={palette.icon} size={18} color={palette.fg} />
+        <Feather name={TONE_ICONS[current.tone]} size={18} color={palette.fg} />
         <Text variant="bodyMedium" color={palette.fg} style={{ flex: 1 }}>
           {current.message}
         </Text>

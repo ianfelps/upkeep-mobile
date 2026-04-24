@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, RefreshControl, SectionList, StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { ConfirmSheet, FAB, Screen, Text, type ConfirmSheetHandle } from '@/components';
-import { colors, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { spacing } from '@/theme';
 import { syncEngine } from '@/sync/syncEngine';
 import { FilterBar } from '../components/FilterBar';
 import { EventRow } from '../components/EventRow';
@@ -12,13 +13,14 @@ import { ConnectionStatusIcon } from '../components/ConnectionStatusIcon';
 import { MonthCalendarView } from '../components/MonthCalendarView';
 import { TimelineView } from '../components/TimelineView';
 import { useEventsForDay, useEventsInRange } from '../queries';
-import { useDeleteEvent } from '../mutations';
 import { eventsQueryKeys } from '../queryKeys';
 import { resolveRange, shiftAnchor, todayKey } from '../selectors';
 import type { EventFilter, EventOccurrence } from '../types';
 import type { LocalEvent } from '@/db/repositories/routineEvents';
+import { useDeleteEvent } from '../mutations';
 
 export default function EventosScreen() {
+  const colors = useColors();
   const [filter, setFilter] = useState<EventFilter>('day');
   const [anchorKey, setAnchorKey] = useState<string>(todayKey());
   const [refreshing, setRefreshing] = useState(false);
@@ -87,7 +89,7 @@ export default function EventosScreen() {
 
   return (
     <Screen>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
         <View style={styles.titleRow}>
           <Text variant="display">Eventos</Text>
           <ConnectionStatusIcon />
@@ -171,8 +173,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.base,
     gap: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
   },
   titleRow: {
     flexDirection: 'row',

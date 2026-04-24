@@ -6,7 +6,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
-import { colors, shadows } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { shadows } from '@/theme';
 
 type Props = {
   onPress?: () => void;
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function FAB({ onPress, icon = 'plus', accessibilityLabel = 'Adicionar' }: Props) {
+  const colors = useColors();
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -26,7 +28,7 @@ export function FAB({ onPress, icon = 'plus', accessibilityLabel = 'Adicionar' }
         onPress={onPress}
         onPressIn={() => (scale.value = withSpring(0.92, { damping: 15, stiffness: 300 }))}
         onPressOut={() => (scale.value = withSpring(1, { damping: 15, stiffness: 300 }))}
-        style={styles.button}
+        style={[styles.button, { backgroundColor: colors.primary }]}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         hitSlop={8}
@@ -48,7 +50,6 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },

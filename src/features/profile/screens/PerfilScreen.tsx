@@ -2,11 +2,13 @@ import React, { useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Card, ConfirmSheet, Screen, Text, type ConfirmSheetHandle } from '@/components';
-import { colors, radii, spacing } from '@/theme';
+import { Card, ConfirmSheet, Screen, SegmentedControl, Text, type ConfirmSheetHandle } from '@/components';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing } from '@/theme';
 import { useAuthStore } from '@/features/auth/store';
 import { useLogout } from '@/features/auth/hooks';
 import { dayjs } from '@/utils/date';
+import { useThemeStore, type ThemeMode } from '@/store/themeStore';
 import {
   EditProfileModal,
   type EditProfileModalHandle,
@@ -19,11 +21,19 @@ import { useDeleteAccount } from '../mutations';
 import { getErrorMessage } from '@/api/errors';
 import { toast } from '@/components';
 
+const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: 'system', label: 'Sistema' },
+  { value: 'light', label: 'Claro' },
+  { value: 'dark', label: 'Escuro' },
+];
+
 export default function PerfilScreen() {
+  const colors = useColors();
   const user = useAuthStore((s) => s.user);
   const router = useRouter();
   const logout = useLogout();
   const deleteAccount = useDeleteAccount();
+  const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
 
   const editRef = useRef<EditProfileModalHandle>(null);
   const pwRef = useRef<ChangePasswordModalHandle>(null);
@@ -64,7 +74,7 @@ export default function PerfilScreen() {
         </Text>
 
         <Card padding="lg" style={styles.identityCard}>
-          <View style={styles.avatar}>
+          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
             <Text variant="h1" color={colors.primaryContrast}>
               {initials || '?'}
             </Text>
@@ -80,6 +90,20 @@ export default function PerfilScreen() {
               </Text>
             )}
           </View>
+        </Card>
+
+        <Card padding="base">
+          <View style={styles.themeRow}>
+            <Feather name="moon" size={18} color={colors.textMuted} />
+            <Text variant="bodyMedium" style={{ flex: 1 }}>
+              Aparência
+            </Text>
+          </View>
+          <SegmentedControl
+            options={THEME_OPTIONS}
+            value={themeMode}
+            onChange={setThemeMode}
+          />
         </Card>
 
         <View style={styles.actions}>
@@ -165,6 +189,7 @@ function ActionRow({
   disabled?: boolean;
   loading?: boolean;
 }) {
+  const colors = useColors();
   const fg = tone === 'destructive' ? colors.error : colors.text;
   const isDisabled = disabled || loading;
   return (
@@ -200,11 +225,16 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   identityInfo: { flex: 1, gap: 2 },
+  themeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+  },
   actions: { gap: spacing.sm },
   actionRow: {
     paddingVertical: spacing.md,

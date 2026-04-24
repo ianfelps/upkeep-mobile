@@ -7,7 +7,8 @@ import {
   type BottomSheetBackdropProps,
   type BottomSheetModalProps,
 } from '@gorhom/bottom-sheet';
-import { colors, radii, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing } from '@/theme';
 import { Text } from './Text';
 
 type Props = Omit<BottomSheetModalProps, 'children' | 'backdropComponent'> & {
@@ -18,6 +19,7 @@ type Props = Omit<BottomSheetModalProps, 'children' | 'backdropComponent'> & {
 
 export const Sheet = forwardRef<BottomSheetModal, Props>(
   ({ title, children, snapPoints, ...rest }, ref) => {
+    const colors = useColors();
     const defaultSnaps = useMemo(() => snapPoints ?? ['90%'], [snapPoints]);
 
     const renderBackdrop = (props: BottomSheetBackdropProps) => (
@@ -38,8 +40,8 @@ export const Sheet = forwardRef<BottomSheetModal, Props>(
         keyboardBehavior="interactive"
         keyboardBlurBehavior="restore"
         android_keyboardInputMode="adjustResize"
-        backgroundStyle={styles.background}
-        handleIndicatorStyle={styles.handle}
+        backgroundStyle={{ backgroundColor: colors.surface, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg }}
+        handleIndicatorStyle={{ backgroundColor: colors.border, width: 40 }}
         backdropComponent={renderBackdrop}
         {...rest}
       >
@@ -59,15 +61,6 @@ export const Sheet = forwardRef<BottomSheetModal, Props>(
 Sheet.displayName = 'Sheet';
 
 const styles = StyleSheet.create({
-  background: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-  },
-  handle: {
-    backgroundColor: colors.border,
-    width: 40,
-  },
   content: {
     flex: 1,
     paddingHorizontal: spacing.base,

@@ -2,7 +2,8 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { SegmentedControl, Text } from '@/components';
-import { colors, radii, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing } from '@/theme';
 import { capitalize } from '@/utils/date';
 import type { EventFilter } from '../types';
 import { formatRangeLabel, shiftAnchor, todayKey } from '../selectors';
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export function FilterBar({ filter, onFilterChange, anchorKey, onAnchorChange }: Props) {
+  const colors = useColors();
   const label = capitalize(formatRangeLabel(filter, anchorKey));
   const isToday = anchorKey === todayKey();
 
@@ -30,7 +32,7 @@ export function FilterBar({ filter, onFilterChange, anchorKey, onAnchorChange }:
       <View style={styles.row}>
         <Pressable
           onPress={() => onAnchorChange(shiftAnchor(filter, anchorKey, -1))}
-          style={styles.iconBtn}
+          style={[styles.iconBtn, { backgroundColor: colors.surfaceAlt }]}
           accessibilityRole="button"
           accessibilityLabel="Período anterior"
           hitSlop={10}
@@ -55,7 +57,7 @@ export function FilterBar({ filter, onFilterChange, anchorKey, onAnchorChange }:
 
         <Pressable
           onPress={() => onAnchorChange(shiftAnchor(filter, anchorKey, 1))}
-          style={styles.iconBtn}
+          style={[styles.iconBtn, { backgroundColor: colors.surfaceAlt }]}
           accessibilityRole="button"
           accessibilityLabel="Próximo período"
           hitSlop={10}
@@ -82,7 +84,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
   },
   center: {
     flex: 1,

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Feather } from '@expo/vector-icons';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing, typography } from '@/theme';
 import { Text } from './Text';
-import { colors, radii, spacing, typography } from '@/theme';
 import { dayjs, parseDateKey, toDateKey } from '@/utils/date';
 
 type Props = {
@@ -23,13 +24,18 @@ export function DatePickerField({
   placeholder = 'Selecionar data',
   minimumDate,
 }: Props) {
+  const colors = useColors();
   const [open, setOpen] = useState(false);
   const current = value ? parseDateKey(value).toDate() : new Date();
 
   const handleChange = (event: DateTimePickerEvent, selected?: Date) => {
     if (Platform.OS === 'android') setOpen(false);
     if (event.type === 'dismissed' || !selected) return;
-    onChange(toDateKey(selected));
+    // Android returns UTC midnight; parse as UTC to recover the correct calendar date.
+    const dateKey = Platform.OS === 'android'
+      ? dayjs.utc(selected).format('YYYY-MM-DD')
+      : toDateKey(selected);
+    onChange(dateKey);
   };
 
   const formatted = value ? dayjs(value).format('dddd, DD [de] MMMM [de] YYYY') : placeholder;
@@ -44,7 +50,10 @@ export function DatePickerField({
       )}
       <Pressable
         onPress={() => setOpen(true)}
-        style={[styles.field, hasError && styles.fieldError]}
+        style={[
+          styles.field,
+          { backgroundColor: colors.surface, borderColor: hasError ? colors.error : colors.border },
+        ]}
         accessibilityRole="button"
         accessibilityLabel={label ?? 'Selecionar data'}
       >
@@ -82,14 +91,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surface,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.md,
     minHeight: 48,
   },
-  fieldError: { borderColor: colors.error },
   value: {
     flex: 1,
     fontFamily: typography.body.fontFamily,

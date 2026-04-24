@@ -15,7 +15,10 @@ import {
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { View, ActivityIndicator, Text } from 'react-native';
-import { colors, typography, spacing } from '@/theme';
+import { lightColors, typography, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { useThemeStore } from '@/store/themeStore';
+import { useColorScheme } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { ToastHost } from '@/components';
 import { useBootstrapSession } from '@/features/auth/hooks';
@@ -68,16 +71,16 @@ export default function RootLayout() {
         <View
           style={{
             flex: 1,
-            backgroundColor: colors.background,
+            backgroundColor: lightColors.background,
             alignItems: 'center',
             justifyContent: 'center',
             padding: spacing.lg,
           }}
         >
-          <Text style={[typography.h2, { color: colors.error, marginBottom: spacing.sm }]}>
+          <Text style={[typography.h2, { color: lightColors.error, marginBottom: spacing.sm }]}>
             Falha ao preparar o banco local
           </Text>
-          <Text style={[typography.body, { color: colors.textMuted, textAlign: 'center' }]}>
+          <Text style={[typography.body, { color: lightColors.textMuted, textAlign: 'center' }]}>
             {migrationsError.message}
           </Text>
         </View>
@@ -90,39 +93,52 @@ export default function RootLayout() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.background,
+          backgroundColor: lightColors.background,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={lightColors.primary} />
       </View>
     );
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <BottomSheetModalProvider>
-            <StatusBar style="dark" />
-            <AppBootstrap />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.background },
-                animation: 'fade',
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-            </Stack>
-            <ToastHost />
+            <ThemedApp />
           </BottomSheetModalProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+function ThemedApp() {
+  const colors = useColors();
+  const mode = useThemeStore((s) => s.mode);
+  const systemScheme = useColorScheme();
+  const isDark = mode === 'dark' || (mode === 'system' && systemScheme === 'dark');
+
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <AppBootstrap />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+          animation: 'fade',
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+      <ToastHost />
+    </>
   );
 }
 

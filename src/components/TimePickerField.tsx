@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Feather } from '@expo/vector-icons';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing, typography } from '@/theme';
 import { Text } from './Text';
-import { colors, radii, spacing, typography } from '@/theme';
 import { formatTime } from '@/utils/date';
 
 type Props = {
@@ -43,6 +44,7 @@ export function TimePickerField({
   placeholder = 'Selecionar horário',
   optional,
 }: Props) {
+  const colors = useColors();
   const [open, setOpen] = useState(false);
 
   const handleChange = (event: DateTimePickerEvent, selected?: Date) => {
@@ -70,7 +72,10 @@ export function TimePickerField({
       <View style={styles.row}>
         <Pressable
           onPress={() => setOpen(true)}
-          style={[styles.field, hasError && styles.fieldError]}
+          style={[
+            styles.field,
+            { backgroundColor: colors.surface, borderColor: hasError ? colors.error : colors.border },
+          ]}
           accessibilityRole="button"
           accessibilityLabel={label ?? 'Selecionar horário'}
         >
@@ -126,14 +131,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surface,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.md,
     minHeight: 48,
   },
-  fieldError: { borderColor: colors.error },
   value: {
     flex: 1,
     fontFamily: typography.body.fontFamily,

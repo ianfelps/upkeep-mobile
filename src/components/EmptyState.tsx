@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { spacing } from '@/theme';
 import { Text } from './Text';
 
 type Props = {
@@ -12,9 +13,10 @@ type Props = {
 };
 
 export function EmptyState({ icon = 'inbox', title, subtitle, style }: Props) {
+  const colors = useColors();
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.iconWrapper}>
+      <View style={[styles.iconWrapper, { backgroundColor: colors.surfaceAlt }]}>
         <Feather name={icon} size={28} color={colors.textMuted} />
       </View>
       <Text variant="h2" align="center" style={styles.title}>
@@ -41,7 +43,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xs,

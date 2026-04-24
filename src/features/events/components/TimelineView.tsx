@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Text } from '@/components';
-import { colors } from '@/theme';
+import { useColors } from '@/theme/useColors';
 import { dayjs } from '@/utils/date';
 import type { EventOccurrence } from '../types';
 import { todayKey } from '../selectors';
@@ -88,6 +88,7 @@ function initialScrollY(dateKey: string): number {
 }
 
 export function TimelineView({ occurrences, dateKey, onSwipeLeft, onSwipeRight, onEventPress }: Props) {
+  const colors = useColors();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const [nowMin, setNowMin] = useState(getNowMinutes);
@@ -138,7 +139,7 @@ export function TimelineView({ occurrences, dateKey, onSwipeLeft, onSwipeRight, 
               <Text variant="caption" color={colors.textMuted} style={styles.hourLabel}>
                 {String(hour).padStart(2, '0')}:00
               </Text>
-              <View style={styles.hourLine} />
+              <View style={[styles.hourLine, { backgroundColor: colors.border }]} />
             </View>
           ))}
 
@@ -158,8 +159,8 @@ export function TimelineView({ occurrences, dateKey, onSwipeLeft, onSwipeRight, 
 
           {isToday && (
             <View style={[styles.nowLine, { top: nowTop }]} pointerEvents="none">
-              <View style={styles.nowDot} />
-              <View style={styles.nowBar} />
+              <View style={[styles.nowDot, { backgroundColor: colors.primary }]} />
+              <View style={[styles.nowBar, { backgroundColor: colors.primary }]} />
             </View>
           )}
         </View>
@@ -190,7 +191,6 @@ const styles = StyleSheet.create({
   hourLine: {
     flex: 1,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
   },
   nowLine: {
     position: 'absolute',
@@ -204,12 +204,10 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: colors.primary,
     marginLeft: TIME_COL_WIDTH - 5,
   },
   nowBar: {
     flex: 1,
     height: 2,
-    backgroundColor: colors.primary,
   },
 });

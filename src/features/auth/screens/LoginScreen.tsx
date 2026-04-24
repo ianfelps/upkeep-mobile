@@ -4,13 +4,15 @@ import { Link, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AppLogo, Banner, Button, Screen, Text, TextField } from '@/components';
-import { colors, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { spacing } from '@/theme';
 import { getErrorMessage } from '@/api/errors';
 import { syncEngine } from '@/sync/syncEngine';
 import { useLogin } from '../hooks';
 import { loginSchema, type LoginValues } from '../schemas';
 
 export default function LoginScreen() {
+  const colors = useColors();
   const router = useRouter();
   const login = useLogin();
 
@@ -22,8 +24,6 @@ export default function LoginScreen() {
   const onSubmit = handleSubmit(async (values) => {
     try {
       await login.mutateAsync(values);
-      // Aguarda pull inicial para DB ter dados antes de navegar.
-      // Promise.race garante no máximo 5s de espera (ex: offline).
       await Promise.race([
         syncEngine.tick('login'),
         new Promise<void>((resolve) => setTimeout(resolve, 5000)),

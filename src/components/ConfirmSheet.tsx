@@ -2,7 +2,8 @@ import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { colors, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { spacing } from '@/theme';
 import { Button } from './Button';
 import { Sheet } from './Sheet';
 import { Text } from './Text';
@@ -21,6 +22,7 @@ type Props = {
 
 export const ConfirmSheet = forwardRef<ConfirmSheetHandle, Props>(
   ({ title, message, confirmLabel = 'Confirmar', cancelLabel = 'Cancelar', tone = 'default', loading, onConfirm }, ref) => {
+    const colors = useColors();
     const sheetRef = useRef<BottomSheetModal>(null);
 
     useImperativeHandle(ref, () => ({
@@ -31,11 +33,12 @@ export const ConfirmSheet = forwardRef<ConfirmSheetHandle, Props>(
     const isDestructive = tone === 'destructive';
     const iconName = isDestructive ? 'alert-triangle' : 'help-circle';
     const iconColor = isDestructive ? colors.error : colors.primary;
+    const iconBg = isDestructive ? colors.errorMuted : colors.primaryMuted;
 
     return (
       <Sheet ref={sheetRef} snapPoints={['35%']}>
         <View style={styles.body}>
-          <View style={[styles.iconWrap, isDestructive ? styles.iconWrapError : styles.iconWrapDefault]}>
+          <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
             <Feather name={iconName} size={28} color={iconColor} />
           </View>
           <Text variant="h2" align="center">{title}</Text>
@@ -84,8 +87,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.xs,
   },
-  iconWrapDefault: { backgroundColor: colors.primaryMuted },
-  iconWrapError: { backgroundColor: colors.errorMuted },
   actions: {
     flexDirection: 'row',
     gap: spacing.sm,

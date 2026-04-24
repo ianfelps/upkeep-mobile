@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text as RNText, type TextProps, type TextStyle } from 'react-native';
-import { colors, typography, type TypographyVariant } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { typography, type TypographyVariant } from '@/theme';
 
 type Props = TextProps & {
   variant?: TypographyVariant;
@@ -11,12 +12,13 @@ type Props = TextProps & {
 
 export function Text({
   variant = 'body',
-  color = colors.text,
+  color,
   weight,
   align,
   style,
   ...rest
 }: Props) {
+  const colors = useColors();
   const baseStyle = typography[variant];
   const weightMap: Record<string, string> = {
     regular: 'Inter_400Regular',
@@ -27,7 +29,7 @@ export function Text({
   const fontFamily = weight ? weightMap[weight] : baseStyle.fontFamily;
   return (
     <RNText
-      style={[baseStyle, { color, fontFamily, textAlign: align }, style]}
+      style={[baseStyle, { color: color ?? colors.text, fontFamily, textAlign: align }, style]}
       {...rest}
     />
   );

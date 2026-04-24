@@ -8,7 +8,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors, radii, spacing, typography } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing, typography } from '@/theme';
 import { Text } from './Text';
 
 type Props = TextInputProps & {
@@ -23,6 +24,7 @@ type Props = TextInputProps & {
 
 export const TextField = forwardRef<TextInput, Props>(
   ({ label, helper, error, leadingIcon, trailingIcon, containerStyle, onFocus, onBlur, style, showPasswordToggle, secureTextEntry, ...rest }, ref) => {
+    const colors = useColors();
     const [focused, setFocused] = useState(false);
     const [visible, setVisible] = useState(false);
     const hasError = !!error;
@@ -44,15 +46,17 @@ export const TextField = forwardRef<TextInput, Props>(
         <View
           style={[
             styles.field,
-            focused && styles.fieldFocused,
-            hasError && styles.fieldError,
+            {
+              backgroundColor: colors.surface,
+              borderColor: hasError ? colors.error : focused ? colors.primary : colors.border,
+            },
           ]}
         >
           {leadingIcon && <View style={styles.iconLeft}>{leadingIcon}</View>}
           <TextInput
             ref={ref}
             placeholderTextColor={colors.textMuted}
-            style={[styles.input, style]}
+            style={[styles.input, { color: colors.text }, style]}
             secureTextEntry={resolvedSecure}
             onFocus={(e) => {
               setFocused(true);
@@ -88,22 +92,14 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.md,
     minHeight: 48,
   },
-  fieldFocused: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surface,
-  },
-  fieldError: { borderColor: colors.error },
   input: {
     flex: 1,
     paddingVertical: 12,
-    color: colors.text,
     fontFamily: typography.body.fontFamily,
     fontSize: typography.body.fontSize,
   },

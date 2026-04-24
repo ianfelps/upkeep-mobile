@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
-import { colors, radii, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing } from '@/theme';
 import { Text } from './Text';
 
 type Props = {
@@ -13,6 +14,8 @@ type Props = {
 };
 
 export function Chip({ label, selected, onPress, tone = 'primary', style, disabled }: Props) {
+  const colors = useColors();
+
   const bg = selected
     ? tone === 'primary'
       ? colors.primary

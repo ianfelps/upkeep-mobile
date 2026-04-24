@@ -5,12 +5,14 @@ import { Feather } from '@expo/vector-icons';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Banner, Button, Screen, Text, TextField } from '@/components';
-import { colors, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { spacing } from '@/theme';
 import { getErrorMessage } from '@/api/errors';
 import { useRegister } from '../hooks';
 import { registerSchema, type RegisterValues } from '../schemas';
 
 export default function RegisterScreen() {
+  const colors = useColors();
   const router = useRouter();
   const register = useRegister();
 

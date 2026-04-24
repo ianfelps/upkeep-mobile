@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Octicons } from '@expo/vector-icons';
-import { colors, radii } from '@/theme';
+import { useColors } from '@/theme/useColors';
 
 type Size = 'sm' | 'md' | 'lg';
 
@@ -14,9 +14,10 @@ const SIZES: Record<Size, { box: number; icon: number; radius: number }> = {
 type Props = { size?: Size };
 
 export function AppLogo({ size = 'md' }: Props) {
+  const colors = useColors();
   const { box, icon, radius } = SIZES[size];
   return (
-    <View style={[styles.box, { width: box, height: box, borderRadius: radius }]}>
+    <View style={[styles.box, { width: box, height: box, borderRadius: radius, backgroundColor: colors.primary }]}>
       <Octicons name="sparkle" size={icon} color={colors.primaryContrast} />
     </View>
   );
@@ -24,7 +25,6 @@ export function AppLogo({ size = 'md' }: Props) {
 
 const styles = StyleSheet.create({
   box: {
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Text } from '@/components';
-import { colors, radii } from '@/theme';
+import { useColors, useIsDark } from '@/theme/useColors';
+import { radii } from '@/theme';
 import { formatTime } from '@/utils/date';
 import { resolveEventBg, resolveEventColor } from '../constants';
 import type { EventOccurrence } from '../types';
@@ -31,6 +32,8 @@ export function TimelineEventBlock({
   availableWidth,
   onPress,
 }: Props) {
+  const colors = useColors();
+  const isDark = useIsDark();
   const duration = Math.max(endMin - startMin, MIN_DURATION_MIN);
   const top = (startMin / 60) * HOUR_HEIGHT;
   const height = (duration / 60) * HOUR_HEIGHT;
@@ -40,7 +43,7 @@ export function TimelineEventBlock({
   const width = colWidth - BLOCK_GAP * 2;
 
   const borderColor = resolveEventColor(occurrence.source.color);
-  const bgColor = resolveEventBg(occurrence.source.color);
+  const bgColor = resolveEventBg(occurrence.source.color, isDark);
 
   return (
     <Pressable

@@ -5,7 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import NetInfo from '@react-native-community/netinfo';
 import { Sheet, Text } from '@/components';
-import { colors, radii, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing } from '@/theme';
 import {
   countWithSyncError,
   findWithSyncError,
@@ -21,11 +22,12 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 function SyncErrorItem({ event }: { event: LocalEvent }) {
+  const colors = useColors();
   const statusLabel = STATUS_LABELS[event.syncStatus] ?? event.syncStatus;
   const dotColor = resolveEventColor(event.color);
 
   return (
-    <View style={styles.item}>
+    <View style={[styles.item, { borderBottomColor: colors.border }]}>
       <View style={[styles.itemDot, { backgroundColor: dotColor }]} />
       <View style={styles.itemBody}>
         <Text variant="bodyMedium" numberOfLines={1}>
@@ -46,6 +48,7 @@ function SyncErrorItem({ event }: { event: LocalEvent }) {
 }
 
 export function ConnectionStatusIcon() {
+  const colors = useColors();
   const sheetRef = useRef<BottomSheetModal>(null);
   const [offline, setOffline] = useState(false);
 
@@ -125,7 +128,7 @@ export function ConnectionStatusIcon() {
               </View>
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
             <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
               {errorEvents.map((ev) => (
@@ -156,7 +159,7 @@ export function ConnectionStatusIcon() {
               </View>
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
             <Text variant="body" color={colors.textMuted}>
               Você está offline. Suas alterações ficam salvas localmente e serão sincronizadas automaticamente assim que a conexão for restaurada.
@@ -194,7 +197,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
   },
   list: {
     flex: 1,
@@ -205,7 +207,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   itemDot: {
     width: 10,

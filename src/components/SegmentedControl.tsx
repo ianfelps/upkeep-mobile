@@ -5,7 +5,8 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { colors, radii, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing } from '@/theme';
 import { Text } from './Text';
 
 type Props<T extends string> = {
@@ -15,6 +16,7 @@ type Props<T extends string> = {
 };
 
 export function SegmentedControl<T extends string>({ options, value, onChange }: Props<T>) {
+  const colors = useColors();
   const [trackWidth, setTrackWidth] = React.useState(0);
   const index = Math.max(0, options.findIndex((o) => o.value === value));
   const translateX = useSharedValue(0);
@@ -35,10 +37,12 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
 
   return (
     <View
-      style={styles.track}
+      style={[styles.track, { backgroundColor: colors.surfaceAlt }]}
       onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width - 4)}
     >
-      {trackWidth > 0 && <Animated.View style={[styles.thumb, thumbStyle]} />}
+      {trackWidth > 0 && (
+        <Animated.View style={[styles.thumb, { backgroundColor: colors.surface }, thumbStyle]} />
+      )}
       {options.map((opt) => {
         const active = opt.value === value;
         return (
@@ -65,7 +69,6 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
 const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceAlt,
     borderRadius: radii.md,
     padding: 2,
     position: 'relative',
@@ -82,7 +85,6 @@ const styles = StyleSheet.create({
     top: 2,
     bottom: 2,
     left: 2,
-    backgroundColor: colors.surface,
     borderRadius: radii.sm,
     zIndex: 1,
   },

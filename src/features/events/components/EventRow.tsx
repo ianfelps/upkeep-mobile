@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components';
-import { colors, radii, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { radii, spacing } from '@/theme';
 import { formatTime } from '@/utils/date';
 import { resolveEventColor } from '../constants';
 import type { EventOccurrence } from '../types';
@@ -12,13 +13,20 @@ type Props = {
 };
 
 export function EventRow({ occurrence, onPress }: Props) {
+  const colors = useColors();
   const dotColor = resolveEventColor(occurrence.source.color);
   const pending = occurrence.source.syncStatus !== 'synced';
 
   return (
     <Pressable
       onPress={() => onPress?.(occurrence)}
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.container,
+        {
+          backgroundColor: pressed ? colors.surfaceAlt : colors.surface,
+          borderColor: colors.border,
+        },
+      ]}
       accessibilityRole="button"
       accessibilityLabel={`${occurrence.title}, ${formatTime(occurrence.startTime)}`}
     >
@@ -58,13 +66,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.base,
-    backgroundColor: colors.surface,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
     gap: spacing.base,
   },
-  pressed: { backgroundColor: colors.surfaceAlt },
   timeCol: {
     width: 56,
     alignItems: 'flex-start',

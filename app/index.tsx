@@ -2,15 +2,17 @@ import { Redirect } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/Text';
 import { AppLogo } from '@/components/AppLogo';
-import { colors, spacing } from '@/theme';
+import { useColors } from '@/theme/useColors';
+import { spacing } from '@/theme';
 import { useAuthStore } from '@/features/auth/store';
 
 export default function IndexRoute() {
+  const colors = useColors();
   const status = useAuthStore((s) => s.status);
 
   if (status === 'loading') {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.brand}>
           <AppLogo size="lg" />
           <Text variant="display" style={styles.appName}>Upkeep</Text>
@@ -31,7 +33,6 @@ export default function IndexRoute() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
