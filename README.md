@@ -24,11 +24,22 @@ App mobile do Upkeep em React Native + Expo (TypeScript). Consome a API irmã [`
 
 ### Eventos
 - CRUD completo com sync offline-first
-- **Visualização dia**: timeline vertical com blocos de horário (estilo Google Calendar), swipe esquerda/direita para navegar entre dias
-- **Visualização semana**: lista agrupada por dia
+- **Visualização dia**: timeline vertical com blocos de horário (estilo Google Calendar), swipe esquerda/direita para navegar entre dias. Tap em um bloco abre `EventActionsSheet` com detalhes ricos (tipo, data, dias da semana, descrição, hábitos vinculados, botão editar).
+- **Visualização semana**: lista agrupada por dia, com chips de hábitos vinculados em cada evento
 - **Visualização mês**: calendário em grade, segunda a domingo, chips coloridos por dia
 - Cor por evento — paleta de 8 cores configurável no formulário
 - Filtro de conexão: ícone discreto com Sheet modal mostrando estado offline ou fila de erros de sync
+
+### Hábitos
+- CRUD completo com sync offline-first
+- **Heatmap estilo GitHub** (53 semanas × 7 dias) com filtro de período (`1m / 6m / 1a`), auto-scroll para os dias mais recentes ao abrir
+- **Heatmap global** no topo da lista + **heatmap individual** na tela de detalhe de cada hábito
+- **Conclusão em 1 toque**: botão circular no card cria/remove log `Completed` para hoje
+- **Backfill**: tocar em qualquer célula passada do heatmap abre sheet para registrar status (Concluído/Pulado/Perdido) + notas
+- **Vínculo com eventos recorrentes**: hábitos podem ser vinculados a um ou mais eventos. Chips do hábito aparecem na linha/sheet do evento — tap marca o hábito como concluído para a data daquele evento
+- Estatísticas no detalhe: sequência atual, recorde, total e taxa de conclusão dos últimos 30 dias
+- Picker de ícone (24 ícones Feather curados, scroll horizontal) e cor (mesma paleta dos eventos)
+- Frequência: Diário / Semanal / Mensal · meta configurável por período
 
 ### Auth & Perfil
 - Login / cadastro (com confirmação de senha)
@@ -71,38 +82,47 @@ npm start                # ou: npm run android / npm run ios
 app/                   rotas (Expo Router)
   index.tsx            splash/redirect por status de auth
   (auth)/              login, register
-  (tabs)/              eventos, habitos, progresso, perfil
+  (tabs)/              eventos, habitos/{index,[localId]}, progresso, perfil
 src/
-  api/                 ky client, endpoints, auth interceptor, DTOs (zod)
+  api/                 ky client, endpoints (routineEvents, habits, habitLogs),
+                         auth interceptor, DTOs (zod)
   components/          primitivas UI (Button, TextField, Sheet, ConfirmSheet,
                          AppLogo, Toast, Banner, SegmentedControl, ...)
-  db/                  schema, migrator, repositories (routineEvents, kv)
+  db/                  schema, migrator,
+                         repositories (routineEvents, habits, habitLogs, kv)
   features/
     auth/              login, register, session bootstrap
     events/            timeline, calendar, queries, selectors, form modal,
-                         color picker, connection status icon
+                         actions sheet, color picker, connection status icon
+    habits/            list/detail screens, heatmap, card com toggle,
+                         form modal, icon/color/linked-events pickers,
+                         log edit sheet, selectors (heatmap + stats)
     profile/           edit, change password, logout, delete
-  sync/                syncEngine (hasSynced), pushQueue, pullDelta, triggers
+  sync/                syncEngine (hasSynced), pushQueue (events→habits→logs),
+                         pullDelta (per-resource cursors), triggers
   theme/               colors, typography, spacing, radii, shadows
   utils/               date, id (ulid), env, secureStore, logger
 drizzle/               migrations SQL geradas
-__tests__/             Jest specs
+__tests__/             Jest specs (expandRecurrence, habitsSelectors)
 ```
 
 ## Offline-first — como funciona
 
-- **Leitura**: queries leem o SQLite local (`useEventsForDay` / `useEventsInRange`). A UI nunca espera a rede.
+- **Leitura**: queries leem o SQLite local (`useEventsForDay`, `useHabitsList`, `useGlobalHeatmap`, etc.). A UI nunca espera a rede.
 - **Escrita otimista**: create/update/delete gravam local com `sync_status = pending_*` e disparam `schedulePostMutationSync()` (debounce 300ms).
-- **Push queue** (`src/sync/pushQueue.ts`) drena pendentes por `updated_at ASC`: POST/PUT/DELETE na API, grava `remote_id` em sucesso, registra `sync_error` em falhas 4xx.
-- **Pull delta** (`src/sync/pullDelta.ts`): `GET /routine-events?updatedSince={lastPulledAt}`, UPSERT por `remote_id` com LWW por `updated_at`.
+- **Push queue** (`src/sync/pushQueue.ts`) drena pendentes em ordem **eventos → hábitos → logs**, por `updated_at ASC`: POST/PUT/DELETE na API, grava `remote_id` em sucesso, registra `sync_error` em falhas 4xx. Logs de hábito aguardam o `remote_id` do hábito pai antes de subir.
+- **Pull delta** (`src/sync/pullDelta.ts`): mesmas três fases, com cursores por recurso (`sync.lastPulledAt.{events,habits,habitLogs}`). UPSERT por `remote_id` com LWW por `updated_at`. Para hábitos, faz 1 chamada `GET /habits/{id}/logs?updatedSince=` por hábito ativo.
 - **Triggers** (`src/sync/triggers.ts`): login · AppState foreground · NetInfo offline→online · pós-mutação · pull-to-refresh.
-- **Refresh token**: mutex em `src/api/authInterceptor.ts` garante um único refresh por rajada de 401s.
+- **Refresh token**: mutex em `src/api/client.ts` garante um único refresh por rajada de 401s.
 - **hasSynced()**: `syncEngine.hasSynced()` permite que telas saibam se ao menos um sync foi concluído, evitando flash de estado vazio antes dos dados chegarem.
+
+Requisito do backend:
+- API precisa ter `JsonStringEnumConverter` registrado em `Program.cs` — payloads de hábito/log mandam enums como string (`"Daily"`, `"Completed"`).
 
 Gaps conhecidos:
 - Deletes remotos cross-device dependem de full-reconcile 24h (API sem tombstones).
 - Sync em background (BGTask / WorkManager) fica para v2.
-- Dark mode: só claro na v1.
+- `ConnectionStatusIcon` ainda só conta erros de `routine_events`; erros em hábitos/logs aparecem só via toast.
 
 ## Testes
 
@@ -110,7 +130,9 @@ Gaps conhecidos:
 npm test
 ```
 
-Cobertura atual: `__tests__/expandRecurrence.spec.ts` (expansão de recorrência, `resolveRange`, `shiftAnchor`, `groupByDay`).
+Cobertura atual:
+- `__tests__/expandRecurrence.spec.ts` — expansão de recorrência, `resolveRange`, `shiftAnchor`, `groupByDay`.
+- `__tests__/habitsSelectors.spec.ts` — heatmap (global e por hábito), cálculo de streak/stats, decoração `completedToday`.
 
 ## Tema
 

@@ -57,6 +57,7 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="habitos/[localId]" options={{ href: null }} />
       <Tabs.Screen
         name="progresso"
         options={{

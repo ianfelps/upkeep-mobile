@@ -5,6 +5,9 @@ import { nowIsoUtc } from '@/utils/date';
 
 export type KvKey =
   | 'sync.lastPulledAt'
+  | 'sync.lastPulledAt.events'
+  | 'sync.lastPulledAt.habits'
+  | 'sync.lastPulledAt.habitLogs'
   | 'sync.lastFullReconcileAt'
   | 'auth.userId';
 

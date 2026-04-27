@@ -9,6 +9,7 @@ import { FilterBar } from '../components/FilterBar';
 import { EventRow } from '../components/EventRow';
 import { EmptyEvents } from '../components/EmptyEvents';
 import { EventFormModal, type EventFormModalHandle } from '../components/EventFormModal';
+import { EventActionsSheet, type EventActionsSheetHandle } from '../components/EventActionsSheet';
 import { ConnectionStatusIcon } from '../components/ConnectionStatusIcon';
 import { MonthCalendarView } from '../components/MonthCalendarView';
 import { TimelineView } from '../components/TimelineView';
@@ -26,6 +27,7 @@ export default function EventosScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [syncDone, setSyncDone] = useState(() => syncEngine.hasSynced());
   const formRef = useRef<EventFormModalHandle>(null);
+  const actionsSheetRef = useRef<EventActionsSheetHandle>(null);
   const deleteSheetRef = useRef<ConfirmSheetHandle>(null);
   const [pendingDelete, setPendingDelete] = useState<LocalEvent | null>(null);
   const remove = useDeleteEvent();
@@ -63,6 +65,7 @@ export default function EventosScreen() {
 
   const openCreate = () => formRef.current?.open();
   const openEdit = (occ: EventOccurrence) => formRef.current?.open(occ.source);
+  const openActions = (occ: EventOccurrence) => actionsSheetRef.current?.open(occ);
 
   const handleDeleteRequest = (event: LocalEvent) => {
     setPendingDelete(event);
@@ -112,7 +115,7 @@ export default function EventosScreen() {
           dateKey={anchorKey}
           onSwipeLeft={() => setAnchorKey(shiftAnchor('day', anchorKey, 1))}
           onSwipeRight={() => setAnchorKey(shiftAnchor('day', anchorKey, -1))}
-          onEventPress={openEdit}
+          onEventPress={openActions}
         />
       ) : filter === 'month' ? (
         <MonthCalendarView
@@ -152,6 +155,7 @@ export default function EventosScreen() {
       <FAB onPress={openCreate} accessibilityLabel="Novo evento" />
 
       <EventFormModal ref={formRef} onDeleteRequest={handleDeleteRequest} />
+      <EventActionsSheet ref={actionsSheetRef} onEdit={openEdit} />
 
       <ConfirmSheet
         ref={deleteSheetRef}

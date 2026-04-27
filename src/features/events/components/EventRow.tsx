@@ -6,6 +6,7 @@ import { radii, spacing } from '@/theme';
 import { formatTime } from '@/utils/date';
 import { resolveEventColor } from '../constants';
 import type { EventOccurrence } from '../types';
+import { EventLinkedHabits } from '@/features/habits/components/EventLinkedHabits';
 
 type Props = {
   occurrence: EventOccurrence;
@@ -55,6 +56,7 @@ export function EventRow({ occurrence, onPress }: Props) {
             Aguardando sincronização
           </Text>
         )}
+        <EventLinkedHabits eventRemoteId={occurrence.remoteId} dateKey={occurrence.dateKey} />
       </View>
     </Pressable>
   );
