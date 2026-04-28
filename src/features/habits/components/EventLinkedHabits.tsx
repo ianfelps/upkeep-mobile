@@ -1,10 +1,12 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Pressable } from 'react-native-gesture-handler';
 import { Feather } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Text } from '@/components';
 import { useColors } from '@/theme/useColors';
 import { radii, spacing } from '@/theme';
+import { dayjs, toDateKey } from '@/utils/date';
 import * as habitsRepo from '@/db/repositories/habits';
 import * as habitLogsRepo from '@/db/repositories/habitLogs';
 import { resolveHabitColor } from '../constants';
@@ -37,7 +39,11 @@ export function EventLinkedHabits({ eventRemoteId, dateKey }: Props) {
 
   if (!eventRemoteId || !query.data || query.data.length === 0) return null;
 
+  const todayKey = toDateKey(dayjs());
+  const isFuture = dateKey > todayKey;
+
   const onToggle = async (item: { habit: habitsRepo.LocalHabit; log: habitLogsRepo.LocalHabitLog | null }) => {
+    if (isFuture) return;
     if (item.log?.status === 'completed') {
       await remove.mutateAsync(item.log.localId);
     } else {
@@ -58,18 +64,19 @@ export function EventLinkedHabits({ eventRemoteId, dateKey }: Props) {
           <Pressable
             key={item.habit.localId}
             onPress={() => onToggle(item)}
-            disabled={upsert.isPending || remove.isPending}
+            disabled={upsert.isPending || remove.isPending || isFuture}
             style={[
               styles.chip,
               {
                 backgroundColor: done ? tint : 'transparent',
                 borderColor: tint,
+                opacity: isFuture ? 0.4 : 1,
               },
             ]}
             hitSlop={6}
             accessibilityRole="button"
-            accessibilityLabel={`${item.habit.title}${done ? ' concluído' : ''}`}
-            accessibilityState={{ checked: done }}
+            accessibilityLabel={`${item.habit.title}${done ? ' concluído' : ''}${isFuture ? ' (data futura)' : ''}`}
+            accessibilityState={{ checked: done, disabled: isFuture }}
           >
             <Feather
               name={done ? 'check-circle' : 'circle'}
