@@ -1,6 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { Text } from '@/components';
 import { useColors } from '@/theme/useColors';
 import { dayjs } from '@/utils/date';
@@ -95,6 +102,39 @@ export function TimelineView({ occurrences, dateKey, onSwipeLeft, onSwipeRight, 
   const isToday = dateKey === todayKey();
   const eventsWidth = width - TIME_COL_WIDTH - RIGHT_PAD;
   const [startY] = useState(() => initialScrollY(dateKey));
+  const translateX = useSharedValue(0);
+  const prevDateKey = useRef(dateKey);
+  const pendingEnter = useRef<-1 | 1 | 0>(0);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  const easeOut = Easing.out(Easing.cubic);
+
+  useEffect(() => {
+    if (prevDateKey.current === dateKey) return;
+    prevDateKey.current = dateKey;
+    const dir = pendingEnter.current;
+    pendingEnter.current = 0;
+    if (dir === 0) {
+      translateX.value = 0;
+      return;
+    }
+    translateX.value = dir * width;
+    translateX.value = withTiming(0, { duration: 240, easing: easeOut });
+  }, [dateKey, width, translateX, easeOut]);
+
+  const animateSwap = (direction: -1 | 1, cb: () => void) => {
+    pendingEnter.current = (-direction) as -1 | 1;
+    translateX.value = withTiming(
+      direction * width,
+      { duration: 200, easing: easeOut },
+      (finished) => {
+        if (finished) runOnJS(cb)();
+      },
+    );
+  };
 
   useEffect(() => {
     const targetMin = isToday ? nowMin : 8 * 60;
@@ -117,17 +157,24 @@ export function TimelineView({ occurrences, dateKey, onSwipeLeft, onSwipeRight, 
     .activeOffsetX([-40, 40])
     .failOffsetY([-15, 15])
     .runOnJS(true)
+    .onUpdate(e => {
+      translateX.value = e.translationX;
+    })
     .onEnd(e => {
-      if (Math.abs(e.translationX) < SWIPE_THRESHOLD) return;
-      if (e.translationX < 0) onSwipeLeft();
-      else onSwipeRight();
+      const past = Math.abs(e.translationX) > SWIPE_THRESHOLD || Math.abs(e.velocityX) > 600;
+      if (!past) {
+        translateX.value = withTiming(0, { duration: 220, easing: easeOut });
+        return;
+      }
+      const dir: -1 | 1 = e.translationX < 0 ? -1 : 1;
+      animateSwap(dir, dir < 0 ? onSwipeLeft : onSwipeRight);
     });
 
   return (
     <GestureDetector gesture={pan}>
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scroll}
+      <Animated.ScrollView
+        ref={scrollRef as never}
+        style={[styles.scroll, animatedStyle]}
         contentContainerStyle={styles.content}
         contentOffset={{ x: 0, y: startY }}
         showsVerticalScrollIndicator={false}
@@ -164,14 +211,14 @@ export function TimelineView({ occurrences, dateKey, onSwipeLeft, onSwipeRight, 
             </View>
           )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </GestureDetector>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  content: { paddingBottom: 96 },
+  content: { paddingBottom: 30, paddingTop: 30 },
   canvas: {
     height: TOTAL_HEIGHT,
   },
@@ -184,9 +231,9 @@ const styles = StyleSheet.create({
   },
   hourLabel: {
     width: TIME_COL_WIDTH,
-    paddingLeft: 8,
+    paddingLeft: 6,
     textAlign: 'right',
-    paddingRight: 8,
+    paddingRight: 6,
   },
   hourLine: {
     flex: 1,
